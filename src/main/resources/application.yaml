@@ -1,0 +1,17 @@
+keycloak:
+  auth-server-url: http://localhost:9080/auth
+  principal-attribute: preferred_username
+  public-client: true
+  realm: chats
+  resource: chats
+  security-constraints:
+    - authRoles:
+        - user
+      securityCollections:
+        - patterns:
+            - /api/*
+  token-store: cookie
+logging:
+  level:
+    root: info
+    org.apache.http.wire: info
