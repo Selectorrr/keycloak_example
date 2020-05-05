@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AddressClaimSet;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -57,9 +58,47 @@ public class SecurityService {
     }
 
     public UserDto getUser() {
-        String username = getUsername();
-        Set<String> roles = getRoles();
-        return new UserDto(username, roles);
+        UserDto.UserDtoBuilder builder = UserDto.builder()
+                .username(getUsername())
+                .roles(getRoles());
+
+        Optional<AccessToken> accessToken = getAccessToken();
+        if (accessToken.isPresent()) {
+            AccessToken token = accessToken.get();
+            builder
+                    .name(token.getName())
+                    .givenName(token.getGivenName())
+                    .familyName(token.getFamilyName())
+                    .middleName(token.getMiddleName())
+                    .nickName(token.getNickName())
+                    .preferredUsername(token.getPreferredUsername())
+                    .profile(token.getProfile())
+                    .picture(token.getPicture())
+                    .website(token.getWebsite())
+                    .email(token.getEmail())
+                    .emailVerified(token.getEmailVerified())
+                    .gender(token.getGender())
+                    .birthdate(token.getBirthdate())
+                    .zoneinfo(token.getZoneinfo())
+                    .locale(token.getLocale())
+                    .phoneNumber(token.getPhoneNumber())
+                    .phoneNumberVerified(token.getPhoneNumberVerified())
+                    .address(toAddress(token.getAddress()).orElse(null));
+
+        }
+        return builder.build();
+    }
+
+    private Optional<UserAddress> toAddress(AddressClaimSet address) {
+        return Optional.ofNullable(address)
+                .map(addressClaimSet -> UserAddress.builder()
+                        .formattedAddress(addressClaimSet.getFormattedAddress())
+                        .streetAddress(addressClaimSet.getStreetAddress())
+                        .locality(addressClaimSet.getLocality())
+                        .region(addressClaimSet.getRegion())
+                        .postalCode(addressClaimSet.getPostalCode())
+                        .country(addressClaimSet.getCountry())
+                        .build());
     }
 
     private Set<String> getRoles() {
