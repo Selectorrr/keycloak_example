@@ -18,7 +18,7 @@ services:
       - ./themes/app-base:/opt/jboss/keycloak/themes/app-base
       - ./themes/app:/opt/jboss/keycloak/themes/app
       - ./keycloak-db:/opt/jboss/keycloak/standalone/data
-#      - ./themes/standalone.xml:/opt/jboss/keycloak/standalone/configuration/standalone.xml
+      - ./themes/standalone.xml:/opt/jboss/keycloak/standalone/configuration/standalone.xml
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
