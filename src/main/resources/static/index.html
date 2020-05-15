@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<script src="keycloak.js"></script>
+<script>
+    let keycloak = new Keycloak();
+    keycloak.init({
+        onLoad: 'login-required',
+        promiseType: "native"
+    }).then(() => {
+        function loadData() {
+            fetch('/api/me', {
+                    headers: {'Authorization': 'Bearer ' + keycloak.token}
+                }
+            ).then((a) => {
+                return a.json();
+            }).then((b) => {
+                document.body.append(JSON.stringify(b));
+            })
+        }
+
+
+        keycloak.updateToken(30).then(function () {
+            loadData();
+        }).catch(function () {
+            console.log(arguments);
+            alert('Failed to refresh token');
+        });
+
+    });
+</script>
+</body>
+</html>

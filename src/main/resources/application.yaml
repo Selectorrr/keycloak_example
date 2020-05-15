@@ -1,15 +1,9 @@
 keycloak:
-  auth-server-url: http://keycloak-cio.okd.gpn.cloud.nexign.com/auth
-  principal-attribute: preferred_username
-  public-client: true
   realm: pa
+  auth-server-url: http://keycloak-cio.okd.gpn.cloud.nexign.com/auth/
+  principal-attribute: preferred_username
+  ssl-required: external
   resource: pa
-  token-store: cookie
-  token-cookie-path: /
-#  security-constraints:
-#    - authRoles:
-#        - USER
-#        - SUDO
-#      securityCollections:
-#        - patterns:
-#            - /api/*
+  public-client: true
+  confidential-port: 0
+  bearer-only: true
