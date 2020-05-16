@@ -325,6 +325,163 @@
             }, {}, [])("/")
         });
 
+        /**
+         * [promise-polyfill]{@link https://github.com/taylorhakes/promise-polyfill}
+         *
+         * @version v8.1.3
+         * @author Hakes, Taylor
+         * @copyright Hakes, Taylor 2014
+         * @license MIT
+         */
+        !function (e, n) {
+            "object" == typeof exports && "undefined" != typeof module ? n() : "function" == typeof define && define.amd ? define(n) : n()
+        }(0, function () {
+            "use strict";
+
+            function e(e) {
+                var n = this.constructor;
+                return this.then(function (t) {
+                    return n.resolve(e()).then(function () {
+                        return t
+                    })
+                }, function (t) {
+                    return n.resolve(e()).then(function () {
+                        return n.reject(t)
+                    })
+                })
+            }
+
+            function n(e) {
+                return !(!e || "undefined" == typeof e.length)
+            }
+
+            function t() {
+            }
+
+            function o(e) {
+                if (!(this instanceof o)) throw new TypeError("Promises must be constructed via new");
+                if ("function" != typeof e) throw new TypeError("not a function");
+                this._state = 0, this._handled = !1, this._value = undefined, this._deferreds = [], c(e, this)
+            }
+
+            function r(e, n) {
+                for (; 3 === e._state;) e = e._value;
+                0 !== e._state ? (e._handled = !0, o._immediateFn(function () {
+                    var t = 1 === e._state ? n.onFulfilled : n.onRejected;
+                    if (null !== t) {
+                        var o;
+                        try {
+                            o = t(e._value)
+                        } catch (r) {
+                            return void f(n.promise, r)
+                        }
+                        i(n.promise, o)
+                    } else (1 === e._state ? i : f)(n.promise, e._value)
+                })) : e._deferreds.push(n)
+            }
+
+            function i(e, n) {
+                try {
+                    if (n === e) throw new TypeError("A promise cannot be resolved with itself.");
+                    if (n && ("object" == typeof n || "function" == typeof n)) {
+                        var t = n.then;
+                        if (n instanceof o) return e._state = 3, e._value = n, void u(e);
+                        if ("function" == typeof t) return void c(function (e, n) {
+                            return function () {
+                                e.apply(n, arguments)
+                            }
+                        }(t, n), e)
+                    }
+                    e._state = 1, e._value = n, u(e)
+                } catch (r) {
+                    f(e, r)
+                }
+            }
+
+            function f(e, n) {
+                e._state = 2, e._value = n, u(e)
+            }
+
+            function u(e) {
+                2 === e._state && 0 === e._deferreds.length && o._immediateFn(function () {
+                    e._handled || o._unhandledRejectionFn(e._value)
+                });
+                for (var n = 0, t = e._deferreds.length; t > n; n++) r(e, e._deferreds[n]);
+                e._deferreds = null
+            }
+
+            function c(e, n) {
+                var t = !1;
+                try {
+                    e(function (e) {
+                        t || (t = !0, i(n, e))
+                    }, function (e) {
+                        t || (t = !0, f(n, e))
+                    })
+                } catch (o) {
+                    if (t) return;
+                    t = !0, f(n, o)
+                }
+            }
+
+            var a = setTimeout;
+            o.prototype["catch"] = function (e) {
+                return this.then(null, e)
+            }, o.prototype.then = function (e, n) {
+                var o = new this.constructor(t);
+                return r(this, new function (e, n, t) {
+                    this.onFulfilled = "function" == typeof e ? e : null, this.onRejected = "function" == typeof n ? n : null, this.promise = t
+                }(e, n, o)), o
+            }, o.prototype["finally"] = e, o.all = function (e) {
+                return new o(function (t, o) {
+                    function r(e, n) {
+                        try {
+                            if (n && ("object" == typeof n || "function" == typeof n)) {
+                                var u = n.then;
+                                if ("function" == typeof u) return void u.call(n, function (n) {
+                                    r(e, n)
+                                }, o)
+                            }
+                            i[e] = n, 0 == --f && t(i)
+                        } catch (c) {
+                            o(c)
+                        }
+                    }
+
+                    if (!n(e)) return o(new TypeError("Promise.all accepts an array"));
+                    var i = Array.prototype.slice.call(e);
+                    if (0 === i.length) return t([]);
+                    for (var f = i.length, u = 0; i.length > u; u++) r(u, i[u])
+                })
+            }, o.resolve = function (e) {
+                return e && "object" == typeof e && e.constructor === o ? e : new o(function (n) {
+                    n(e)
+                })
+            }, o.reject = function (e) {
+                return new o(function (n, t) {
+                    t(e)
+                })
+            }, o.race = function (e) {
+                return new o(function (t, r) {
+                    if (!n(e)) return r(new TypeError("Promise.race accepts an array"));
+                    for (var i = 0, f = e.length; f > i; i++) o.resolve(e[i]).then(t, r)
+                })
+            }, o._immediateFn = "function" == typeof setImmediate && function (e) {
+                setImmediate(e)
+            } || function (e) {
+                a(e, 0)
+            }, o._unhandledRejectionFn = function (e) {
+                void 0 !== console && console && console.warn("Possible Unhandled Promise Rejection:", e)
+            };
+            var l = function () {
+                if ("undefined" != typeof self) return self;
+                if ("undefined" != typeof window) return window;
+                if ("undefined" != typeof global) return global;
+                throw Error("unable to locate global object")
+            }();
+            "Promise" in l ? l.Promise.prototype["finally"] || (l.Promise.prototype["finally"] = e) : l.Promise = o
+        });
+
         var Keycloak = factory(root["sha256"], root["base64js"]);
         root["Keycloak"] = Keycloak;
 
@@ -335,6 +492,51 @@
         }
     }
 })(window, function (sha256_imported, base64js_imported) {
+    if (typeof Promise === 'undefined') {
+        throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
+    }
+
+    var loggedPromiseDeprecation = false;
+
+    function logPromiseDeprecation() {
+        if (!loggedPromiseDeprecation) {
+            loggedPromiseDeprecation = true;
+            console.warn('[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead.');
+        }
+    }
+
+    function toKeycloakPromise(promise) {
+        promise.__proto__ = KeycloakPromise.prototype;
+        return promise;
+    }
+
+    function KeycloakPromise(executor) {
+        return toKeycloakPromise(new Promise(executor));
+    }
+
+    KeycloakPromise.prototype = Object.create(Promise.prototype);
+    KeycloakPromise.prototype.constructor = KeycloakPromise;
+
+    KeycloakPromise.prototype.success = function (callback) {
+        logPromiseDeprecation();
+
+        var promise = this.then(function handleSuccess(value) {
+            callback(value);
+        });
+
+        return toKeycloakPromise(promise);
+    };
+
+    KeycloakPromise.prototype.error = function (callback) {
+        logPromiseDeprecation();
+
+        var promise = this.catch(function handleError(error) {
+            callback(error);
+        });
+
+        return toKeycloakPromise(promise);
+    };
+
     function Keycloak(config) {
         if (!(this instanceof Keycloak)) {
             return new Keycloak(config);
@@ -391,13 +593,6 @@
 
                 if (initOptions.checkLoginIframeInterval) {
                     loginIframe.interval = initOptions.checkLoginIframeInterval;
-                }
-
-                if (initOptions.promiseType === 'native') {
-                    kc.useNativePromise = true;
-                } else {
-                    console.warn('[KEYCLOAK] Using legacy promises is deprecated and will be removed in future versions. You can opt in to using native promises by setting `promiseType` to \'native\' when initializing Keycloak.');
-                    kc.useNativePromise = false;
                 }
 
                 if (initOptions.onLoad === 'login-required') {
@@ -463,13 +658,13 @@
                 kc.flow = 'standard';
             }
 
-            var promise = createPromise(false);
+            var promise = createPromise();
 
-            var initPromise = createPromise(true);
-            initPromise.promise.success(function () {
+            var initPromise = createPromise();
+            initPromise.promise.then(function () {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).error(function (errorData) {
+            }).catch(function (errorData) {
                 promise.setError(errorData);
             });
 
@@ -480,19 +675,12 @@
                     if (!prompt) {
                         options.prompt = 'none';
                     }
-                    if (kc.useNativePromise) {
-                        kc.login(options).then(function () {
-                            initPromise.setSuccess();
-                        }).catch(function () {
-                            initPromise.setError();
-                        });
-                    } else {
-                        kc.login(options).success(function () {
-                            initPromise.setSuccess();
-                        }).error(function () {
-                            initPromise.setError();
-                        });
-                    }
+
+                    kc.login(options).then(function () {
+                        initPromise.setSuccess();
+                    }).catch(function () {
+                        initPromise.setError();
+                    });
                 };
 
                 var checkSsoSilently = function () {
@@ -522,14 +710,14 @@
                 switch (initOptions.onLoad) {
                     case 'check-sso':
                         if (loginIframe.enable) {
-                            setupCheckLoginIframe().success(function () {
-                                checkLoginIframe().success(function (unchanged) {
+                            setupCheckLoginIframe().then(function () {
+                                checkLoginIframe().then(function (unchanged) {
                                     if (!unchanged) {
                                         kc.silentCheckSsoRedirectUri ? checkSsoSilently() : doLogin(false);
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).error(function () {
+                                }).catch(function () {
                                     initPromise.setError();
                                 });
                             });
@@ -553,9 +741,9 @@
                 }
 
                 if (callback && callback.valid) {
-                    return setupCheckLoginIframe().success(function () {
+                    return setupCheckLoginIframe().then(function () {
                         processCallback(callback, initPromise);
-                    }).error(function (e) {
+                    }).catch(function (e) {
                         initPromise.setError();
                     });
                 } else if (initOptions) {
@@ -563,8 +751,8 @@
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
-                            setupCheckLoginIframe().success(function () {
-                                checkLoginIframe().success(function (unchanged) {
+                            setupCheckLoginIframe().then(function () {
+                                checkLoginIframe().then(function (unchanged) {
                                     if (unchanged) {
                                         kc.onAuthSuccess && kc.onAuthSuccess();
                                         initPromise.setSuccess();
@@ -572,15 +760,15 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).error(function () {
+                                }).catch(function () {
                                     initPromise.setError();
                                 });
                             });
                         } else {
-                            kc.updateToken(-1).success(function () {
+                            kc.updateToken(-1).then(function () {
                                 kc.onAuthSuccess && kc.onAuthSuccess();
                                 initPromise.setSuccess();
-                            }).error(function () {
+                            }).catch(function () {
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
@@ -599,8 +787,8 @@
                 }
             }
 
-            configPromise.success(processInit);
-            configPromise.error(function () {
+            configPromise.then(processInit);
+            configPromise.catch(function () {
                 promise.setError();
             });
 
@@ -719,12 +907,12 @@
                 url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
             }
 
-            if (options && options.locale) {
-                url += '&ui_locales=' + encodeURIComponent(options.locale);
+            if (options && options.action && options.action != 'register') {
+                url += '&kc_action=' + encodeURIComponent(options.action);
             }
 
-            if (options && options.kcLocale) {
-                url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
+            if (options && options.locale) {
+                url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
 
             if (kc.pkceMethod) {
@@ -800,7 +988,7 @@
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-            var promise = createPromise(false);
+            var promise = createPromise();
 
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
@@ -825,7 +1013,7 @@
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-            var promise = createPromise(false);
+            var promise = createPromise();
 
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
@@ -864,7 +1052,7 @@
         };
 
         kc.updateToken = function (minValidity) {
-            var promise = createPromise(false);
+            var promise = createPromise();
 
             if (!kc.refreshToken) {
                 promise.setError();
@@ -938,9 +1126,9 @@
 
             if (loginIframe.enable) {
                 var iframePromise = checkLoginIframe();
-                iframePromise.success(function () {
+                iframePromise.then(function () {
                     exec();
-                }).error(function () {
+                }).catch(function () {
                     promise.setError();
                 });
             } else {
@@ -986,6 +1174,10 @@
             var prompt = oauth.prompt;
 
             var timeLocal = new Date().getTime();
+
+            if (oauth['kc_action_status']) {
+                kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status']);
+            }
 
             if (error) {
                 if (prompt != 'none') {
@@ -1057,7 +1249,7 @@
         }
 
         function loadConfig(url) {
-            var promise = createPromise(true);
+            var promise = createPromise();
             var configUrl;
 
             if (!config) {
@@ -1331,13 +1523,13 @@
             var supportedParams;
             switch (kc.flow) {
                 case 'standard':
-                    supportedParams = ['code', 'state', 'session_state'];
+                    supportedParams = ['code', 'state', 'session_state', 'kc_action_status'];
                     break;
                 case 'implicit':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in'];
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state'];
+                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state', 'kc_action_status'];
                     break;
             }
 
@@ -1390,9 +1582,10 @@
                 oauthParams: {}
             };
             for (var i = 0; i < p.length; i++) {
-                var t = p[i].split('=');
-                if (supportedParams.indexOf(t[0]) !== -1) {
-                    result.oauthParams[t[0]] = t[1];
+                var split = p[i].indexOf("=");
+                var key = p[i].slice(0, split);
+                if (supportedParams.indexOf(key) !== -1) {
+                    result.oauthParams[key] = p[i].slice(split + 1);
                 } else {
                     if (result.paramsString !== '') {
                         result.paramsString += '&';
@@ -1403,15 +1596,7 @@
             return result;
         }
 
-        function createPromise(internal) {
-            if (!internal && kc.useNativePromise) {
-                return createNativePromise();
-            } else {
-                return createLegacyPromise();
-            }
-        }
-
-        function createNativePromise() {
+        function createPromise() {
             // Need to create a native Promise which also preserves the
             // interface of the custom promise type previously used by the API
             var p = {
@@ -1423,55 +1608,16 @@
                     p.reject(result);
                 }
             };
-            p.promise = new Promise(function (resolve, reject) {
+            p.promise = new KeycloakPromise(function (resolve, reject) {
                 p.resolve = resolve;
                 p.reject = reject;
             });
             return p;
         }
 
-        function createLegacyPromise() {
-            var p = {
-                setSuccess: function (result) {
-                    p.success = true;
-                    p.result = result;
-                    if (p.successCallback) {
-                        p.successCallback(result);
-                    }
-                },
-
-                setError: function (result) {
-                    p.error = true;
-                    p.result = result;
-                    if (p.errorCallback) {
-                        p.errorCallback(result);
-                    }
-                },
-
-                promise: {
-                    success: function (callback) {
-                        if (p.success) {
-                            callback(p.result);
-                        } else if (!p.error) {
-                            p.successCallback = callback;
-                        }
-                        return p.promise;
-                    },
-                    error: function (callback) {
-                        if (p.error) {
-                            callback(p.result);
-                        } else if (!p.success) {
-                            p.errorCallback = callback;
-                        }
-                        return p.promise;
-                    }
-                }
-            };
-            return p;
-        }
 
         function setupCheckLoginIframe() {
-            var promise = createPromise(true);
+            var promise = createPromise();
 
             if (!loginIframe.enable) {
                 promise.setSuccess();
@@ -1537,7 +1683,7 @@
             if (loginIframe.enable) {
                 if (kc.token) {
                     setTimeout(function () {
-                        checkLoginIframe().success(function (unchanged) {
+                        checkLoginIframe().then(function (unchanged) {
                             if (unchanged) {
                                 scheduleCheckIframe();
                             }
@@ -1548,7 +1694,7 @@
         }
 
         function checkLoginIframe() {
-            var promise = createPromise(true);
+            var promise = createPromise();
 
             if (loginIframe.iframe && loginIframe.iframeOrigin) {
                 var msg = kc.clientId + ' ' + (kc.sessionId ? kc.sessionId : '');
@@ -1569,17 +1715,17 @@
                 return {
                     login: function (options) {
                         window.location.replace(kc.createLoginUrl(options));
-                        return createPromise(false).promise;
+                        return createPromise().promise;
                     },
 
                     logout: function (options) {
                         window.location.replace(kc.createLogoutUrl(options));
-                        return createPromise(false).promise;
+                        return createPromise().promise;
                     },
 
                     register: function (options) {
                         window.location.replace(kc.createRegisterUrl(options));
-                        return createPromise(false).promise;
+                        return createPromise().promise;
                     },
 
                     accountManagement: function () {
@@ -1589,7 +1735,7 @@
                         } else {
                             throw "Not supported by the OIDC server";
                         }
-                        return createPromise(false).promise;
+                        return createPromise().promise;
                     },
 
                     redirectUri: function (options, encodeHash) {
@@ -1648,7 +1794,7 @@
 
                 return {
                     login: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
 
                         var cordovaOptions = createCordovaOptions(options);
                         var loginUrl = kc.createLoginUrl(options);
@@ -1696,7 +1842,7 @@
                     },
 
                     logout: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
 
                         var logoutUrl = kc.createLogoutUrl(options);
                         var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
@@ -1731,7 +1877,7 @@
                     },
 
                     register: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
                         var registerUrl = kc.createRegisterUrl();
                         var cordovaOptions = createCordovaOptions(options);
                         var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
@@ -1770,7 +1916,7 @@
 
                 return {
                     login: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
                         var loginUrl = kc.createLoginUrl(options);
 
                         universalLinks.subscribe('keycloak', function (event) {
@@ -1785,7 +1931,7 @@
                     },
 
                     logout: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
                         var logoutUrl = kc.createLogoutUrl(options);
 
                         universalLinks.subscribe('keycloak', function (event) {
@@ -1800,7 +1946,7 @@
                     },
 
                     register: function (options) {
-                        var promise = createPromise(false);
+                        var promise = createPromise();
                         var registerUrl = kc.createRegisterUrl(options);
                         universalLinks.subscribe('keycloak', function (event) {
                             universalLinks.unsubscribe('keycloak');

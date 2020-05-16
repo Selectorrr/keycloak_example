@@ -1,6 +1,6 @@
 keycloak:
   realm: pa
-  auth-server-url: http://keycloak-cio.okd.gpn.cloud.nexign.com/auth/
+  auth-server-url: http://keycloak-cio.okd.gpn.cloud.nexign.com/auth
   principal-attribute: preferred_username
   ssl-required: external
   resource: pa

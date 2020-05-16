@@ -5,32 +5,59 @@
     <title>Test</title>
 </head>
 <body>
+
+<!--
+по хорошему мы должны импортировать этот файл прямиком с сервера авторизации (http://keycloak-cio.okd.gpn.cloud.nexign.com/auth/js/keycloak.js)
+если сервер обновиться то и файл тоже, но для этого надо будет параметризировать сборку фронта для канкретного окружения
+поэтому давай лучше скопируем его к нам в исходники
+-->
 <script src="keycloak.js"></script>
+
+<button id="logout" style="display: none" onclick="keycloak.logout()">logout</button>
 <script>
-    let keycloak = new Keycloak();
+    let keycloak = new Keycloak(); //необходимо вызывать после того как dom загрузился (внутри используется)
     keycloak.init({
-        onLoad: 'login-required',
-        promiseType: "native"
+        onLoad: 'login-required', //редиректит пользователя на страницу авторизации сразу вместо того что-б показывать приглашение туда перейти
+        promiseType: "native", //используем современный способ создания промайсов иначе в консоле будут варнинги о legacy промайсах
+        checkLoginIframe: false //отключаем фичу проверки авторизованности пользователя через iframe тк это станет не возможным без ssl в следующих версиях хрома
     }).then(() => {
-        function loadData() {
-            fetch('/api/me', {
-                    headers: {'Authorization': 'Bearer ' + keycloak.token}
-                }
-            ).then((a) => {
-                return a.json();
-            }).then((b) => {
-                document.body.append(JSON.stringify(b));
-            })
-        }
+        //тут пользователь уже авторизовался (цикл редиректов закончился) и keycloak.token досутпен, мы можем начинать импортировать наше приложение и рендерить
+
+        (async () => {
+
+            //в идеале использовать фичу динамического импорта, т.к. до этого момента пользователь редиректится туда обратно, и он не должен видеть мерцаний интерфейса, и страница для редиректа должна грузиться быстро
+            // const { ReactDOM } = await import('react');
+            // ReactDOM.render(element, document.getElementById('root'));
 
 
-        keycloak.updateToken(30).then(function () {
-            loadData();
-        }).catch(function () {
-            console.log(arguments);
-            alert('Failed to refresh token');
-        });
+            //пример функции получения информации о пользователе
+            function loadData() {
+                fetch('/api/me', {
+                        headers: {'Authorization': 'Bearer ' + keycloak.token}
+                    }
+                ).then((a) => {
+                    return a.json();
+                }).then((b) => {
+                    document.body.append(JSON.stringify(b));
+                })
+            }
 
+            //middleware нужно настроить так что-б все запросы сначала вызывали keycloak.updateToken(30)
+            // и затем вставляли токен headers: {'Authorization': 'Bearer ' + keycloak.token}
+            keycloak.updateToken(30)
+                .then(function () {
+                    loadData();
+                }).catch(function () {
+                //истек сеанс пользователя, или администратор его завершил или пользователь бездействовал, или сервер авторизации не доступен
+                console.log('Failed to refresh token');
+                keycloak.logout() //пытаемся авторизовываться заново (редиректим пользователя на сервер авторизации)
+            });
+
+        })();
+
+
+        //просто пример кнопки logout
+        document.getElementById('logout').style.display = 'block';
     });
 </script>
 </body>
